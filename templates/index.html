@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMG Transformer - Computación Gráfica</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <!-- BARRA SUPERIOR PRINCIPAL (ESTILO ILOVEIMG) -->
+    <header class="navbar">
+        <div class="nav-brand">
+            <span class="brand-badge">CG</span>
+            <span class="brand-title"><strong>IMG</strong> Transformer</span>
+        </div>
+
+        <nav class="nav-tools" id="nav-tools">
+            <button class="tool-tab active" data-tool="negativo">Negativo</button>
+            <button class="tool-tab" data-tool="brillo">Brillo</button>
+            <button class="tool-tab" data-tool="brillo_canal">Brillo x Canal</button>
+            <button class="tool-tab" data-tool="grises">Escala Grises</button>
+            <button class="tool-tab" data-tool="umbral">Umbralización</button>
+            <button class="tool-tab" data-tool="canales">Canales RGB / CMY</button>
+            <button class="tool-tab" data-tool="suma">Fusión / Suma</button>
+            <button class="tool-tab" data-tool="histograma">Histograma</button>
+            <button class="tool-tab" data-tool="recorte">Recorte</button>
+            <button class="tool-tab" data-tool="zoom">Zoom</button>
+            <button class="tool-tab" data-tool="reduccion">Reducción</button>
+            <button class="tool-tab" data-tool="rotacion">Rotación</button>
+        </nav>
+
+        <div class="nav-actions">
+            <button id="btn-cambiar-img" class="btn-secondary" title="Cambiar imagen base">Cambiar Imagen</button>
+            <button id="btn-descargar" class="btn-primary" disabled>Descargar</button>
+        </div>
+    </header>
+
+    <!-- BARRA DESPLEGABLE DE PARÁMETROS DE LA HERRAMIENTA SELECCIONADA -->
+    <section class="toolbar-options" id="toolbar-options">
+        
+        <!-- PANEL: NEGATIVO -->
+        <div class="tool-panel active" id="panel-negativo">
+            <div class="panel-desc">
+                <strong>Negativo:</strong> Invierte los valores de cada píxel (<code>255 - img</code>) preservando canales RGB.
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarTransformacion('negativo')">Aplicar Negativo</button>
+        </div>
+
+        <!-- PANEL: BRILLO -->
+        <div class="tool-panel" id="panel-brillo">
+            <div class="control-group">
+                <label for="brillo-slider">Intensidad de Brillo:</label>
+                <input type="range" id="brillo-slider" min="-150" max="150" value="50" step="1">
+                <span class="val-display" id="brillo-val">+50</span>
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarBrillo()">Aplicar Brillo</button>
+        </div>
+
+        <!-- PANEL: BRILLO POR CANAL -->
+        <div class="tool-panel" id="panel-brillo_canal">
+            <div class="control-group">
+                <label>Canal objetivo:</label>
+                <select id="brillo-canal-sel">
+                    <option value="R">Rojo (Canal R)</option>
+                    <option value="G">Verde (Canal G)</option>
+                    <option value="B">Azul (Canal B)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="brillo-canal-slider">Valor:</label>
+                <input type="range" id="brillo-canal-slider" min="-150" max="150" value="60" step="1">
+                <span class="val-display" id="brillo-canal-val">+60</span>
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarBrilloCanal()">Aplicar Brillo por Canal</button>
+        </div>
+
+        <!-- PANEL: ESCALAS DE GRISES -->
+        <div class="tool-panel" id="panel-grises">
+            <div class="control-group">
+                <label>Método de Escala de Grises:</label>
+                <select id="grises-metodo">
+                    <option value="gris_promedio">Promedio: (R + G + B) / 3</option>
+                    <option value="gris_midgray">Midgray (Tonalidad Media): (Max + Min) / 2</option>
+                    <option value="gris_luminosidad">Luminosidad: 0.299*R + 0.587*G + 0.114*B</option>
+                </select>
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarGrises()">Convertir a Grises</button>
+        </div>
+
+        <!-- PANEL: UMBRALIZACIÓN -->
+        <div class="tool-panel" id="panel-umbral">
+            <div class="control-group">
+                <label for="umbral-slider">Umbral de Binarización (T):</label>
+                <input type="range" id="umbral-slider" min="0" max="255" value="128" step="1">
+                <span class="val-display" id="umbral-val">128</span>
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarUmbral()">Aplicar Umbralización</button>
+        </div>
+
+        <!-- PANEL: CANALES RGB / CMY -->
+        <div class="tool-panel" id="panel-canales">
+            <div class="control-group">
+                <label>Vista de Canales:</label>
+                <select id="canales-modo">
+                    <option value="mosaico_rgb">Mosaico Completo RGB (Original, Rojo, Verde, Azul)</option>
+                    <option value="mosaico_cmy">Mosaico Completo CMY (Original, Cian, Magenta, Amarillo)</option>
+                    <option value="rojo">Solo Canal Rojo</option>
+                    <option value="verde">Solo Canal Verde</option>
+                    <option value="azul">Solo Canal Azul</option>
+                    <option value="cian">Solo Capa Cian</option>
+                    <option value="magenta">Solo Capa Magenta</option>
+                    <option value="amarillo">Solo Capa Amarillo</option>
+                </select>
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarCanales()">Mostrar Canales</button>
+        </div>
+
+        <!-- PANEL: FUSIÓN / SUMA DE IMÁGENES -->
+        <div class="tool-panel" id="panel-suma">
+            <div class="control-group">
+                <label>Tipo de Suma:</label>
+                <select id="suma-tipo">
+                    <option value="promedio">Suma Promedio (A + B) / 2</option>
+                    <option value="ponderada">Suma Ponderada: alfa*A + (1-alfa)*B</option>
+                </select>
+            </div>
+            <div class="control-group" id="grupo-alfa" style="display:none;">
+                <label for="suma-alfa">Alfa (&alpha;):</label>
+                <input type="range" id="suma-alfa" min="0" max="1" step="0.05" value="0.5">
+                <span class="val-display" id="suma-alfa-val">0.50</span>
+            </div>
+            <div class="control-group">
+                <label>Segunda Imagen:</label>
+                <button type="button" class="btn-subir-mini" onclick="document.getElementById('input-segunda-img').click()">Subir 2da Imagen</button>
+                <input type="file" id="input-segunda-img" accept=".jpg,.png,.jpeg" style="display:none;">
+                <span id="label-segunda-img" class="badge-tag">ghost.png (predeterminada)</span>
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarSuma()">Fusionar Imágenes</button>
+        </div>
+
+        <!-- PANEL: HISTOGRAMA -->
+        <div class="tool-panel" id="panel-histograma">
+            <div class="panel-desc">
+                <strong>Histograma Comparativo:</strong> Genera la distribución de frecuencias para los canales Rojo, Verde, Azul y Escala de Grises en una imagen 2x2.
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarTransformacion('histograma')">Generar Histograma</button>
+        </div>
+
+        <!-- PANEL: RECORTE -->
+        <div class="tool-panel" id="panel-recorte">
+            <div class="control-group-inline">
+                <label>X1: <input type="number" id="rec-x1" value="0" min="0" class="input-num"></label>
+                <label>Y1: <input type="number" id="rec-y1" value="0" min="0" class="input-num"></label>
+                <label>X2: <input type="number" id="rec-x2" value="300" min="1" class="input-num"></label>
+                <label>Y2: <input type="number" id="rec-y2" value="300" min="1" class="input-num"></label>
+                <button type="button" class="btn-calc-rec" onclick="autoValoresRecorte()">50% Central</button>
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarRecorte()">Recortar</button>
+        </div>
+
+        <!-- PANEL: ZOOM -->
+        <div class="tool-panel" id="panel-zoom">
+            <div class="control-group">
+                <label for="zoom-slider">Factor de Ampliación:</label>
+                <input type="range" id="zoom-slider" min="1" max="5" value="2" step="1">
+                <span class="val-display" id="zoom-val">2x</span>
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarZoom()">Aplicar Zoom</button>
+        </div>
+
+        <!-- PANEL: REDUCCIÓN -->
+        <div class="tool-panel" id="panel-reduccion">
+            <div class="control-group">
+                <label for="reduccion-slider">Factor de Submuestreo:</label>
+                <input type="range" id="reduccion-slider" min="1" max="8" value="2" step="1">
+                <span class="val-display" id="reduccion-val">2x (paso 2)</span>
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarReduccion()">Reducir Resolución</button>
+        </div>
+
+        <!-- PANEL: ROTACIÓN -->
+        <div class="tool-panel" id="panel-rotacion">
+            <div class="control-group">
+                <label>Ángulo de Rotación:</label>
+                <div class="btn-group-rotacion">
+                    <button type="button" class="btn-rot active" data-ang="90">90° Horario</button>
+                    <button type="button" class="btn-rot" data-ang="180">180°</button>
+                    <button type="button" class="btn-rot" data-ang="270">270° (90° Antihorario)</button>
+                </div>
+            </div>
+            <button class="btn-aplicar" onclick="ejecutarRotacion()">Rotar Imagen</button>
+        </div>
+
+        <div class="panel-reset">
+            <button type="button" id="btn-restablecer" class="btn-outline">Restablecer a Original</button>
+        </div>
+
+    </section>
+
+    <!-- ZONA DE CARGA INICIAL (CUANDO NO HAY IMAGEN) -->
+    <main class="main-container">
+        
+        <div id="dropzone-container" class="dropzone-box">
+            <div class="dropzone-content">
+                <div class="dropzone-icon">&#128247;</div>
+                <h2>Selecciona o arrastra una imagen</h2>
+                <p>Formatos soportados: <code>.jpg</code>, <code>.png</code>, <code>.jpeg</code></p>
+                <label for="file-input-main" class="btn-upload">Seleccionar Imagen desde Archivo</label>
+                <input type="file" id="file-input-main" accept=".jpg,.png,.jpeg" style="display:none;">
+
+                <div class="muestras-seccion">
+                    <span>O prueba con una imagen de clase:</span>
+                    <div id="muestras-lista" class="muestras-tags">
+                        <!-- Botones de muestras inyectados por JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ÁREA DE VISUALIZACIÓN COMPARATIVA (ORIGINAL VS RESULTADO) -->
+        <div id="workspace-container" class="workspace-grid" style="display:none;">
+            
+            <!-- TARJETA: ORIGINAL -->
+            <div class="card-visor">
+                <div class="card-header">
+                    <h3>Imagen Original</h3>
+                    <div class="info-badges" id="info-original">
+                        <span class="badge" id="orig-dim">-</span>
+                        <span class="badge" id="orig-dtype">-</span>
+                    </div>
+                </div>
+                <div class="visor-img-wrapper">
+                    <img id="img-orig-view" src="" alt="Imagen Original">
+                </div>
+            </div>
+
+            <!-- TARJETA: TRANSFORMACIÓN RESULTANTE -->
+            <div class="card-visor resultado">
+                <div class="card-header">
+                    <h3>Resultado Transformado</h3>
+                    <div class="info-badges" id="info-resultado">
+                        <span class="badge badge-accent" id="res-dim">-</span>
+                        <span class="badge badge-accent" id="res-dtype">-</span>
+                    </div>
+                </div>
+                <div class="visor-img-wrapper">
+                    <div id="loader" class="loader-overlay" style="display:none;">
+                        <div class="spinner"></div>
+                        <span>Procesando imagen...</span>
+                    </div>
+                    <img id="img-res-view" src="" alt="Resultado Transformación">
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer">
+        <p>Computación Gráfica &bull; Taller de Procesamiento Digital de Imágenes</p>
+    </footer>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
