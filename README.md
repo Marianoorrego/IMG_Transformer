@@ -9,11 +9,8 @@ El proyecto está organizado de forma modular, cumpliendo el requisito de tener 
 
 ```text
 IMG_Transformer/
-├── app.py                      # Servidor backend en Flask
+├── app.py                      # Servidor backend en Flask (Vercel lo detecta automáticamente)
 ├── requirements.txt            # Dependencias del proyecto
-├── vercel.json                 # Configuración de despliegue en Vercel
-├── api/
-│   └── index.py                # Punto de entrada para Serverless Vercel
 ├── imagenes_de_muestra/        # Imágenes de prueba del curso (mariposa, ghost, mario, etc.)
 ├── libreria/                   # Librería propia modular
 │   ├── __init__.py             # Exportación centralizada de funciones
@@ -31,11 +28,12 @@ IMG_Transformer/
 │   ├── zoom.py                 # Ampliación por duplicación de píxeles
 │   ├── reduccion.py            # Reducción por submuestreo de paso
 │   └── rotacion.py             # Rotación 90°, 180° y 270° (cv2.rotate)
-├── static/
-│   ├── css/
-│   │   └── style.css           # Estilos de interfaz tipo iLoveIMG
-│   └── js/
-│       └── main.js             # Lógica interactiva cliente y AJAX
+├── public/
+│   └── static/
+│       ├── css/
+│       │   └── style.css       # Estilos de interfaz tipo iLoveIMG
+│       └── js/
+│           └── main.js         # Lógica interactiva cliente y AJAX
 └── templates/
     └── index.html              # Plantilla HTML principal
 ```

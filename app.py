@@ -5,13 +5,18 @@ import numpy as np
 from PIL import Image
 from flask import Flask, render_template, request, jsonify, send_file
 
+# En Vercel el disco es de solo lectura; matplotlib necesita una carpeta escribible para su cache
+os.environ.setdefault('MPLCONFIGDIR', '/tmp/matplotlib')
+
 import libreria
 
 CARPETA_ACTUAL = os.path.dirname(os.path.abspath(__file__))
 DIR_TEMPLATES = os.path.join(CARPETA_ACTUAL, 'templates')
-DIR_STATIC = os.path.join(CARPETA_ACTUAL, 'static')
+# Los estilos y scripts van en public/static: en Vercel se sirven directo desde el CDN
+# y en local Flask los sirve desde la misma carpeta bajo la ruta /static
+DIR_STATIC = os.path.join(CARPETA_ACTUAL, 'public', 'static')
 
-app = Flask(__name__, template_folder=DIR_TEMPLATES, static_folder=DIR_STATIC)
+app = Flask(__name__, template_folder=DIR_TEMPLATES, static_folder=DIR_STATIC, static_url_path='/static')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 def obtener_ruta_muestra(nombre):
@@ -56,39 +61,10 @@ def cargar_imagen_desde_bytes(archivo_bytes):
     return np.array(pil_img, dtype=np.uint8)
 
 @app.route('/')
-@app.route('/index')
-@app.route('/app')
-@app.route('/app.py')
-@app.route('/api')
-@app.route('/api/')
-@app.route('/api/index')
-@app.route('/api/index.py')
 def index():
-    try:
-        return render_template('index.html')
-    except Exception:
-        for path in [
-            os.path.join(CARPETA_ACTUAL, 'templates', 'index.html'),
-            os.path.join(CARPETA_ACTUAL, 'api', 'templates', 'index.html')
-        ]:
-            if os.path.exists(path):
-                with open(path, 'r', encoding='utf-8') as f:
-                    return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8'}
-        raise
-
-@app.route('/static/<path:filename>')
-def servir_estaticos(filename):
-    for carpeta in [
-        os.path.join(CARPETA_ACTUAL, 'static'),
-        os.path.join(CARPETA_ACTUAL, 'api', 'static')
-    ]:
-        ruta = os.path.join(carpeta, filename)
-        if os.path.exists(ruta):
-            return send_file(ruta)
-    return "Archivo no encontrado", 404
+    return render_template('index.html')
 
 @app.route('/api/muestras', methods=['GET'])
-@app.route('/muestras', methods=['GET'])
 def listar_muestras():
     archivos_ejemplo = ['mariposa.jpg', 'ghost.png', 'mario_imagen.png', 'pixel_art.png', 'diferentesobjetos.jpeg']
     disponibles = []
@@ -98,7 +74,6 @@ def listar_muestras():
     return jsonify({'muestras': disponibles})
 
 @app.route('/api/cargar-muestra', methods=['POST'])
-@app.route('/cargar-muestra', methods=['POST'])
 def cargar_muestra():
     data = request.get_json() or {}
     nombre = data.get('nombre', 'mariposa.jpg')
@@ -136,7 +111,6 @@ def cargar_muestra():
         })
 
 @app.route('/api/subir', methods=['POST'])
-@app.route('/subir', methods=['POST'])
 def subir_imagen():
     if 'archivo' not in request.files:
         return jsonify({'error': 'No se encontro archivo en la peticion'}), 400
@@ -175,7 +149,6 @@ def subir_imagen():
         })
 
 @app.route('/api/transformar', methods=['POST'])
-@app.route('/transformar', methods=['POST'])
 def transformar():
     if ESTADO['img_original'] is None:
         return jsonify({'error': 'No hay imagen cargada'}), 400
@@ -275,7 +248,6 @@ def transformar():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/descargar', methods=['GET'])
-@app.route('/descargar', methods=['GET'])
 def descargar():
     if ESTADO['img_actual'] is None:
         return jsonify({'error': 'No hay imagen para descargar'}), 400
@@ -299,7 +271,6 @@ def descargar():
     )
 
 @app.route('/api/restablecer', methods=['POST'])
-@app.route('/restablecer', methods=['POST'])
 def restablecer():
     if ESTADO['img_original'] is not None:
         ESTADO['img_actual'] = np.copy(ESTADO['img_original'])
